@@ -1,56 +1,29 @@
 using UnityEngine;
 
-[RequireComponent(typeof(HealthComponent))]
+[RequireComponent(typeof(SpriteRenderer))]
 public class Corpse : MonoBehaviour
 {
-    [Header("Resurrection Settings")]
-    [SerializeField] private GameObject minionVersionPrefab; 
-    [SerializeField] private Color corpseColor = Color.gray;
+    public UnitProfileSO originalStats; // Les données à passer au minion
+    private bool isResurrected = false;
 
-    private bool isDowned = false;
-    private HealthComponent health;
-    private BaseEnemy enemyAI;
-    private Collider2D col;
-    private SpriteRenderer spriteRenderer;
-
-    void Awake()
+    public void Setup(UnitProfileSO stats, Vector3 position)
     {
-        health = GetComponent<HealthComponent>();
-        enemyAI = GetComponent<BaseEnemy>();
-        col = GetComponent<Collider2D>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
-    }
+        originalStats = stats;
+        transform.position = position;
 
-    void OnEnable()
-    {
-        health.onDeath.AddListener(BecomeCorpse);
-    }
+        var sr = GetComponent<SpriteRenderer>();
+        if (stats.corpseSprite != null) sr.sprite = stats.corpseSprite;
+        else sr.sprite = stats.visualSprite; 
 
-    void OnDisable()
-    {
-        health.onDeath.RemoveListener(BecomeCorpse);
-    }
-
-    private void BecomeCorpse()
-    {
-        if (isDowned) return;
-        isDowned = true;
-
-        if (enemyAI != null) enemyAI.enabled = false;
-        if (GetComponent<Rigidbody2D>() != null) GetComponent<Rigidbody2D>().linearVelocity = Vector2.zero;
-
-        gameObject.layer = LayerMask.NameToLayer("Corpse");
-
+        sr.color = Color.gray; 
         transform.rotation = Quaternion.Euler(0, 0, 90);
-        if (spriteRenderer != null) spriteRenderer.color = corpseColor;
-
-        if (col != null) col.isTrigger = true;
-
-        Debug.Log($"{name} is now a corpse.");
     }
 
-    public GameObject GetMinionPrefab()
+    public UnitProfileSO Consume()
     {
-        return minionVersionPrefab;
+        if (isResurrected) return null;
+        isResurrected = true;
+        Destroy(gameObject); 
+        return originalStats;
     }
 }

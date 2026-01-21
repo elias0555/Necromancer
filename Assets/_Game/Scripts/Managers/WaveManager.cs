@@ -5,7 +5,8 @@ using UnityEngine;
 public class ContinuousSpawnManager : MonoBehaviour
 {
     [Header("Configuration")]
-    [SerializeField] private List<EnemyData> allEnemies;
+    [SerializeField] private List<UnitProfileSO> allEnemies; // Directement les profils !
+    [SerializeField] private GameObject genericEnemyPrefab;
 
     [Header("Spawn Settings")]
     [SerializeField] private Transform centerTarget;
@@ -16,7 +17,6 @@ public class ContinuousSpawnManager : MonoBehaviour
     [SerializeField] private float timeBetweenSpawns = 1f;
     [SerializeField] private float minTimeBetweenSpawns = 0.1f;
     [SerializeField] private float difficultyScalingFactor = 0.05f;
-
     [SerializeField] private float levelUpDuration = 30f;
 
     [Header("Boss Settings")]
@@ -58,8 +58,6 @@ public class ContinuousSpawnManager : MonoBehaviour
         if (newLevel > currentDifficultyLevel)
         {
             currentDifficultyLevel = newLevel;
-            Debug.Log($"Niveau de difficulté augmenté : {currentDifficultyLevel}");
-
             timeBetweenSpawns = Mathf.Max(minTimeBetweenSpawns, timeBetweenSpawns * 0.95f);
         }
 
@@ -74,12 +72,15 @@ public class ContinuousSpawnManager : MonoBehaviour
         {
             spawnTimer = 0f;
 
-            List<EnemyData> validEnemies = allEnemies.Where(e => e.minWaveToSpawn <= currentDifficultyLevel).ToList();
+            // Filtre directement sur les profils
+            List<UnitProfileSO> validProfiles = allEnemies
+                .Where(p => p.minWaveToSpawn <= currentDifficultyLevel)
+                .ToList();
 
-            if (validEnemies.Count > 0)
+            if (validProfiles.Count > 0)
             {
-                EnemyData data = GetWeightedRandomEnemy(validEnemies);
-                SpawnEnemy(data);
+                UnitProfileSO chosenProfile = GetWeightedRandomProfile(validProfiles);
+                SpawnEnemy(chosenProfile);
             }
         }
     }
@@ -94,61 +95,63 @@ public class ContinuousSpawnManager : MonoBehaviour
         }
     }
 
-    void SpawnEnemy(EnemyData data)
+    void SpawnEnemy(UnitProfileSO profile)
     {
         Vector3 spawnPos = GetRandomPositionOnCircle();
-        GameObject newEnemy = Instantiate(data.prefab, spawnPos, Quaternion.identity);
 
-        if (newEnemy.TryGetComponent(out BaseEnemy enemyScript))
+        GameObject newEnemy = Instantiate(genericEnemyPrefab, spawnPos, Quaternion.identity);
+
+        // 1. Configurer le corps (Vitesse, Sprite)
+        if (newEnemy.TryGetComponent(out UnitController unit))
         {
-            if (newEnemy.TryGetComponent(out HealthComponent hp))
-            {
-                hp.SetMaxHealth(data.baseHealth); 
-            }
-
-            enemyScript.Initialize(currentDifficultyMultiplier, currentDifficultyMultiplier);
+            unit.Initialize(profile);
         }
+
+        // 2. Configurer le cerveau (Pour le drop du cadavre)
+        if (newEnemy.TryGetComponent(out EnemyBrain brain))
+        {
+            brain.SetProfile(profile);
+        }
+
+        // 3. Appliquer la difficulté sur les PV du profil
+        if (newEnemy.TryGetComponent(out HealthComponent hp))
+        {
+            float scaledHealth = profile.maxHealth * currentDifficultyMultiplier;
+            hp.SetMaxHealth(scaledHealth);
+        }
+
         activeEnemies.Add(newEnemy);
     }
 
     void SpawnBoss()
     {
-        Debug.Log("--- BOSS APPEARED ---");
         Vector3 spawnPos = GetRandomPositionOnCircle();
         GameObject boss = Instantiate(bossPrefab, spawnPos, Quaternion.identity);
 
-        if (boss.TryGetComponent(out BaseEnemy enemyScript))
+        if (boss.TryGetComponent(out HealthComponent hp))
         {
-            enemyScript.Initialize(currentDifficultyMultiplier * 3f, currentDifficultyMultiplier * 1.5f);
+            hp.SetMaxHealth(2000f * currentDifficultyMultiplier);
         }
+
         activeEnemies.Add(boss);
     }
 
     Vector3 GetRandomPositionOnCircle()
     {
         Vector2 randomPoint = Random.insideUnitCircle.normalized * spawnRadius;
-        Vector3 spawnPos = centerTarget.position + (Vector3)randomPoint;
-        spawnPos.z = centerTarget.position.z;
-        return spawnPos;
+        return centerTarget.position + (Vector3)randomPoint;
     }
 
-    EnemyData GetWeightedRandomEnemy(List<EnemyData> enemies)
+    UnitProfileSO GetWeightedRandomProfile(List<UnitProfileSO> profiles)
     {
-        float totalWeight = enemies.Sum(e => e.spawnWeight);
+        float totalWeight = profiles.Sum(p => p.spawnWeight);
         float randomValue = Random.Range(0, totalWeight);
         float cursor = 0;
-        foreach (var enemy in enemies)
+        foreach (var profile in profiles)
         {
-            cursor += enemy.spawnWeight;
-            if (cursor >= randomValue) return enemy;
+            cursor += profile.spawnWeight;
+            if (cursor >= randomValue) return profile;
         }
-        return enemies[0];
-    }
-
-    void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.yellow;
-        Vector3 center = centerTarget != null ? centerTarget.position : transform.position;
-        Gizmos.DrawWireSphere(center, spawnRadius);
+        return profiles[0];
     }
 }

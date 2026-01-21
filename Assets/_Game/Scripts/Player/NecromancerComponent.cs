@@ -1,79 +1,73 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // For new Input System
+using UnityEngine.InputSystem;
 
 public class NecromancerComponent : MonoBehaviour
 {
-    [Header("Necromancy Settings")]
-    [SerializeField] private float detectionRadius = 5f; // Minion wander area
-    [SerializeField] private float resurrectionRange = 3f; // Max distance to revive corpse
-    [SerializeField] private LayerMask corpseLayer; // LayerMask set to "Corpse"
+    [Header("Paramètres")]
+    [SerializeField] private GameObject genericMinionPrefab; // Un prefab VIDE avec juste UnitController + MinionBrain + Health
+    [SerializeField] private float resurrectionRange = 4f;
+    [SerializeField] private LayerMask corpseLayer;
     [SerializeField] private int maxMinions = 10;
 
     private int currentMinionCount = 0;
 
     void Update()
     {
-        HandleResurrectionInput();
-    }
-
-    private void HandleResurrectionInput()
-    {
         if (PlayerInputManager.Instance.playerControls.Player.Necromance.WasPerformedThisFrame())
         {
-            Vector2 mousePos = Camera.main.ScreenToWorldPoint(Mouse.current.position.ReadValue());
-            RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero, 0.1f, corpseLayer);
+            AttemptNecromancy();
+        }
+    }
 
-            if (hit.collider != null)
+    private void AttemptNecromancy()
+    {
+        Vector2 mousePos = Camera.main.ScreenToWorldPoint(Mouse.current.position.ReadValue());
+
+        // On cherche un cadavre sous la souris
+        Collider2D hit = Physics2D.OverlapPoint(mousePos, corpseLayer);
+
+        if (hit != null && hit.TryGetComponent(out Corpse corpse))
+        {
+            float dist = Vector2.Distance(transform.position, corpse.transform.position);
+            if (dist <= resurrectionRange)
             {
-                float dist = Vector2.Distance(transform.position, hit.transform.position);
-
-                if (dist <= resurrectionRange)
+                // Gestion Armée pleine vs non pleine (GDD)
+                if (currentMinionCount < maxMinions)
                 {
-                    if (hit.transform.TryGetComponent(out Corpse corpseScript))
-                    {
-                        Revive(corpseScript);
-                        print("Resurrected a minion!");
-                    }
+                    SpawnMinion(corpse);
                 }
                 else
                 {
-                    Debug.Log("Too far to resurrect!");
+                    RecycleCorpse(corpse);
                 }
             }
         }
     }
 
-    private void Revive(Corpse corpse)
+    private void SpawnMinion(Corpse corpse)
     {
-        if (currentMinionCount >= maxMinions)
-        {
-            Debug.Log("Max minions reached!");
-            return;
-        }
+        // 1. Récupérer les données
+        UnitProfileSO profile = corpse.Consume();
+        if (profile == null) return;
 
-        GameObject prefabToSpawn = corpse.GetMinionPrefab();
+        // 2. Instancier le conteneur vide
+        GameObject minionObj = Instantiate(genericMinionPrefab, corpse.transform.position, Quaternion.identity);
 
-        if (prefabToSpawn != null)
-        {
-            GameObject newMinion = Instantiate(prefabToSpawn, corpse.transform.position, Quaternion.identity);
-            MinionAI ai = newMinion.GetComponent<MinionAI>();
-            if (ai != null)
-            {
-                ai.Initialize(transform, detectionRadius);
-            }
+        // 3. Injecter les données (C'est là que l'héritage opère !)
+        UnitController controller = minionObj.GetComponent<UnitController>();
+        controller.Initialize(profile);
 
-            currentMinionCount++;
+        // 4. Initialiser le cerveau
+        minionObj.GetComponent<MinionBrain>().Initialize(transform);
 
-            Destroy(corpse.gameObject);
-        }
+        currentMinionCount++;
+        Debug.Log($"Squelette {profile.unitName} levé !");
     }
 
-    private void OnDrawGizmos()
+    private void RecycleCorpse(Corpse corpse)
     {
-        Gizmos.color = new Color(0, 1, 0, 0.3f);
-        Gizmos.DrawWireSphere(transform.position, detectionRadius);
-
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position, resurrectionRange);
+        corpse.Consume();
+        // Ajouter du Mana ici
+        Debug.Log("Cadavre recyclé en Mana !");
     }
 }

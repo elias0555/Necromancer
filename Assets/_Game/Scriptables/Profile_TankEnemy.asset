@@ -9,12 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: db1670d15746f394e86e9e41641055c0, type: 3}
-  m_Name: Enemy_Classic
+  m_Script: {fileID: 11500000, guid: 8f673257c55d41d41a707501c369c480, type: 3}
+  m_Name: Profile_TankEnemy
   m_EditorClassIdentifier: 
-  enemyName: ClassicEnemy
-  prefab: {fileID: 1483095923401805621, guid: 4f0069e9713086140b67179c1401b6b8, type: 3}
+  unitName: 
+  visualSprite: {fileID: 0}
+  corpseSprite: {fileID: 0}
+  maxHealth: 100
+  moveSpeed: 3
+  abilityPrefab: {fileID: 4433300506739311901, guid: 4f5c403514d8e444980361a0cb8f75a2, type: 3}
   minWaveToSpawn: 1
   spawnWeight: 1
-  baseHealth: 6
-  baseDamage: 5

@@ -97,7 +97,8 @@ GameObject:
   m_Component:
   - component: {fileID: 400687560701507934}
   - component: {fileID: -1854085512999165863}
-  - component: {fileID: 1525042149370214608}
+  - component: {fileID: 7858534761889551840}
+  - component: {fileID: 3730048147241048744}
   - component: {fileID: 387288120772289815}
   m_Layer: 0
   m_Name: Minion_Classic
@@ -142,7 +143,7 @@ MonoBehaviour:
   onDeath:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &1525042149370214608
+--- !u!114 &7858534761889551840
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -151,16 +152,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 1483095923401805621}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d704d3a04d514f648b4a34e6d4ba707c, type: 3}
+  m_Script: {fileID: 11500000, guid: eae9f113ac543db408f7efae82cea826, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 3.5
-  attackRange: 1.5
-  damage: 5
-  attackCooldown: 1
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 64
+  currentMoveSpeed: 0
+--- !u!114 &3730048147241048744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1483095923401805621}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9bc868d9b6cd68f4c943709a8cbfeece, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  leashDistance: 8
+  detectionRadius: 6
 --- !u!50 &387288120772289815
 Rigidbody2D:
   serializedVersion: 5
