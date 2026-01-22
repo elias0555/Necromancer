@@ -9,7 +9,6 @@ public class MeleeAbility : MonoBehaviour, ICombatAbility
 
     public void ExecuteAttack(Vector2 origin, Vector2 direction, LayerMask targetLayer)
     {
-        // Logique similaire à ton ancien BaseEnemy
         Vector2 hitPoint = origin + direction * (range * 0.5f);
         Collider2D[] hits = Physics2D.OverlapCircleAll(hitPoint, range, targetLayer);
 
@@ -18,7 +17,6 @@ public class MeleeAbility : MonoBehaviour, ICombatAbility
             if (hit.TryGetComponent(out HealthComponent health))
             {
                 health.TakeDamage(damage);
-                // Optionnel : Ajouter du recul (Knockback) ici
             }
         }
     }

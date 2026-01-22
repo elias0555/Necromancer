@@ -23,13 +23,10 @@ public class UnitController : MonoBehaviour
 
     public void Initialize(UnitProfileSO profile)
     {
-        // 1. Appliquer les stats visuelles et physiques
         if (profile.visualSprite != null) _spriteRenderer.sprite = profile.visualSprite;
         currentMoveSpeed = profile.moveSpeed;
-        _health.SetMaxHealth(profile.maxHealth); // Assure-toi d'avoir cette méthode dans HealthComponent
+        _health.SetMaxHealth(profile.maxHealth); 
 
-        // 2. Installer la capacité (Ability)
-        // On nettoie les anciennes capacités si c'est une réanimation
         foreach (Transform child in transform)
         {
             if (child.GetComponent<ICombatAbility>() != null) Destroy(child.gameObject);
@@ -48,8 +45,8 @@ public class UnitController : MonoBehaviour
         _rb.linearVelocity = direction * currentMoveSpeed;
 
         // Flip du sprite basique
-        if (direction.x > 0.1f) transform.localScale = new Vector3(1, 1, 1);
-        else if (direction.x < -0.1f) transform.localScale = new Vector3(-1, 1, 1);
+        if (direction.x > 0.1f) transform.localScale = new Vector3(-1, 1, 1);
+        else if (direction.x < -0.1f) transform.localScale = new Vector3(1, 1, 1);
     }
 
     public void TryAttack(Vector2 targetPos, LayerMask targetLayer)
