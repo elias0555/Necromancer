@@ -2,8 +2,11 @@
 using UnityEngine;
 using UnityEngine.InputSystem; // Nécessaire pour Pointer.current
 
-public class Player : MonoBehaviour
+public class Player : MonoBehaviour, IEnemyTargetable
 {
+	private static Player instance;
+	public static Player Instance => instance; 
+	
     [Header("Combat Settings")]
     [SerializeField] private float attackRange = 2f;
     [SerializeField] private int attackDamage = 10;
@@ -15,54 +18,14 @@ public class Player : MonoBehaviour
     private Vector3 _lastHitPoint;
     private bool _showGizmo = false;
 
-    public HealthComponent HealthComponent;
+	void Awake()
+	{
+		instance = this;
+	}
 
-    void Update()
+	void Update()
     {
-        HandleInput();
-    }
-
-    private void HandleInput()
-    {
-        if (PlayerInputManager.Instance != null &&
-            PlayerInputManager.Instance.playerControls.Player.Attack.WasPressedThisFrame())
-        {
-            PerformAttack();
-        }
-        else if (Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            PerformAttack();
-        }
-    }
-
-    private void PerformAttack()
-    {
-        Vector2 mousePosition = Pointer.current.position.ReadValue();
-        Vector3 worldPosition = Camera.main.ScreenToWorldPoint(mousePosition);
-        worldPosition.z = 0;
-
-        _lastHitPoint = worldPosition;
-        StartCoroutine(ShowGizmoTimer());
-
-
-        Collider2D[] hits = Physics2D.OverlapCircleAll(worldPosition, attackRange);
-
-        foreach (Collider2D hit in hits)
-        {
-            if (hit.gameObject == gameObject) continue;
-
-            HealthComponent targetHealth = hit.GetComponentInParent<HealthComponent>();
-
-            if (targetHealth != null)
-            {
-                targetHealth.TakeDamage(attackDamage);
-                Debug.Log($"TOUCHÉ : {hit.name}");
-            }
-            else
-            {
-                Debug.Log($"Objet détecté : {hit.name}, mais PAS de HealthComponent trouvé dessus.");
-            }
-        }
+		
     }
 
     private void OnDrawGizmos()
@@ -76,6 +39,10 @@ public class Player : MonoBehaviour
             Gizmos.DrawSphere(_lastHitPoint, attackRange);
         }
     }
+
+	public Vector3 Position() {
+		return transform.position;
+	}
 
     private IEnumerator ShowGizmoTimer()
     {
